@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Review — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item active" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Reflect</div>
+      <h1 class="page-title">Weekly review</h1>
+      <p class="page-sub">15-minute end-of-week reflection</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-bottom:18px;">This week's review</h3>
+
+      <div class="form-group">
+        <label>Rate your week overall</label>
+        <div class="stars" id="stars">
+          <span class="star" onclick="rate(1)">★</span>
+          <span class="star" onclick="rate(2)">★</span>
+          <span class="star" onclick="rate(3)">★</span>
+          <span class="star" onclick="rate(4)">★</span>
+          <span class="star" onclick="rate(5)">★</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="progress">What progress did you make on your most important goals this week?</label>
+        <textarea id="progress" placeholder="Be specific — even small steps count."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="energised">When did you feel most alive and effective? What were you doing?</label>
+        <textarea id="energised" placeholder="Notice patterns in what energises you…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="friction">What kept blocking or slowing you down? Is it within your control?</label>
+        <textarea id="friction" placeholder="Separate what you can change from what you can't…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="shift">What one shift — in mindset, habit, or priority — would make next week better?</label>
+        <textarea id="shift" placeholder="One specific, actionable commitment…"></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveReview()">Save weekly review</button>
+    </div>
+
+    <!-- Past reviews -->
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Past reviews</h3>
+      <div id="past-reviews"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+  let selectedRating = 0;
+
+  function rate(n) {
+    selectedRating = n;
+    document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('lit', i < n));
+  }
+
+  function saveReview() {
+    if (!selectedRating) { showToast('Please rate your week'); return; }
+    const progress = document.getElementById('progress').value.trim();
+    if (!progress) { showToast('Fill in at least the progress field'); return; }
+    const students = loadStudents();
+    const id = getCurrentStudent().id;
+    const idx = students.findIndex(x => x.id === id);
+    students[idx].weeklyReviews.push({
+      date: today(),
+      rating: selectedRating,
+      progress,
+      energised: document.getElementById('energised').value.trim(),
+      friction: document.getElementById('friction').value.trim(),
+      shift: document.getElementById('shift').value.trim()
+    });
+    saveStudents(students);
+    showToast('Weekly review saved!');
+    renderPast();
+    ['progress','energised','friction','shift'].forEach(id => document.getElementById(id).value='');
+    rate(0);
+  }
+
+  function renderPast() {
+    const students = loadStudents();
+    const s = students.find(x => x.id === getCurrentStudent().id);
+    const list = [...s.weeklyReviews].reverse();
+    if (!list.length) { document.getElementById('past-reviews').innerHTML='<p style="font-size:13px;color:var(--hint);">No reviews yet.</p>'; return; }
+    document.getElementById('past-reviews').innerHTML = list.map(r => `
+      <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--hint);font-family:var(--mono);">${fmtDate(r.date)}</span>
+          <span style="color:#f59e0b;font-size:14px;">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+        </div>
+        ${r.progress?`<div style="margin-bottom:8px;"><span style="font-size:12px;font-weight:500;color:var(--muted);">Progress</span><div style="font-size:13px;margin-top:2px;">${r.progress}</div></div>`:''}
+        ${r.shift?`<div><span style="font-size:12px;font-weight:500;color:var(--muted);">Next week shift</span><div style="font-size:13px;margin-top:2px;">${r.shift}</div></div>`:''}
+      </div>`).join('');
+  }
+
+  renderPast();
+</script>
+</body>
+</html>

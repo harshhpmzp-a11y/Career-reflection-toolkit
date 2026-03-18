@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Planner — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item active" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Plan</div>
+      <h1 class="page-title">Career planner</h1>
+      <p class="page-sub">Define your target role, skills, and roadmap</p>
+    </div>
+
+    <!-- Target role -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:14px;">Target role</h3>
+      <div class="form-group">
+        <label for="target-role">What role do you want to land?</label>
+        <input type="text" id="target-role" placeholder="e.g. Software Engineer, Brand Manager">
+      </div>
+      <div class="form-group">
+        <label for="timeline">Your path / timeline</label>
+        <textarea id="timeline" style="min-height:60px;" placeholder="e.g. Graduate → Internship → Full-time by 2028"></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveCareerPlan()">Save plan</button>
+    </div>
+
+    <!-- Skills gap -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3>Skills to develop</h3>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="skill-input" placeholder="Add a skill…" style="width:160px;">
+          <button class="btn btn-secondary btn-sm" onclick="addSkill()">+ Add</button>
+        </div>
+      </div>
+      <div id="skills-list"></div>
+    </div>
+
+    <!-- Reflection prompts -->
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Deep reflection — quarterly</h3>
+      <div class="form-group">
+        <label>In what ways has your professional identity shifted recently?</label>
+        <textarea placeholder="Think about how you describe yourself, what you value, what you want…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>What skill or quality are you most afraid to develop — and why?</label>
+        <textarea placeholder="Be honest. Fear often points to the most important growth…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Fast-forward 3 years — are you on the right path?</label>
+        <textarea placeholder="What would have to be true for the answer to be yes?"></textarea>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="showToast('Deep reflection saved locally')">Save reflection</button>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+
+  function loadPlan() {
+    const students = loadStudents();
+    const s = students.find(x => x.id === getCurrentStudent().id);
+    document.getElementById('target-role').value = s.careerPlan.targetRole || '';
+    document.getElementById('timeline').value = s.careerPlan.timeline || '';
+    renderSkills(s.careerPlan.skills || []);
+  }
+
+  function saveCareerPlan() {
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    students[idx].careerPlan.targetRole = document.getElementById('target-role').value.trim();
+    students[idx].careerPlan.timeline = document.getElementById('timeline').value.trim();
+    saveStudents(students);
+    showToast('Career plan saved!');
+  }
+
+  function renderSkills(skills) {
+    document.getElementById('skills-list').innerHTML = skills.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;">${skills.map((sk,i) => `
+          <span style="display:inline-flex;align-items:center;gap:6px;background:var(--accent-bg);color:var(--accent);padding:5px 12px;border-radius:20px;font-size:13px;">
+            ${sk}
+            <span style="cursor:pointer;color:var(--accent-muted);" onclick="removeSkill(${i})">×</span>
+          </span>`).join('')}</div>`
+      : '<p style="font-size:13px;color:var(--hint);">No skills added yet.</p>';
+  }
+
+  function addSkill() {
+    const val = document.getElementById('skill-input').value.trim();
+    if (!val) return;
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    if (!students[idx].careerPlan.skills) students[idx].careerPlan.skills = [];
+    students[idx].careerPlan.skills.push(val);
+    saveStudents(students);
+    document.getElementById('skill-input').value = '';
+    renderSkills(students[idx].careerPlan.skills);
+    showToast('Skill added!');
+  }
+
+  function removeSkill(i) {
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    students[idx].careerPlan.skills.splice(i, 1);
+    saveStudents(students);
+    renderSkills(students[idx].careerPlan.skills);
+  }
+
+  loadPlan();
+</script>
+</body>
+</html>

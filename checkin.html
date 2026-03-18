@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Check-in — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item active" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Reflect</div>
+      <h1 class="page-title">Daily check-in</h1>
+      <p class="page-sub" id="date-label"></p>
+    </div>
+
+    <!-- New check-in form -->
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-bottom:16px;">Today's check-in</h3>
+
+      <div class="form-group">
+        <label>How are you showing up today?</label>
+        <div class="mood-row" id="mood-row">
+          <button class="mood-pill" onclick="pickMood(this)">Energised</button>
+          <button class="mood-pill" onclick="pickMood(this)">Motivated</button>
+          <button class="mood-pill" onclick="pickMood(this)">Focused</button>
+          <button class="mood-pill" onclick="pickMood(this)">Distracted</button>
+          <button class="mood-pill" onclick="pickMood(this)">Anxious</button>
+          <button class="mood-pill" onclick="pickMood(this)">Drained</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="intention">What would make today a win?</label>
+        <input type="text" id="intention" placeholder="Write your one key intention for today…">
+      </div>
+
+      <div class="form-group">
+        <label for="note">End-of-day note (optional)</label>
+        <textarea id="note" placeholder="What went well? What drained you? Any insight from today…"></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveCheckin()">Save check-in</button>
+    </div>
+
+    <!-- Past check-ins -->
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Past check-ins</h3>
+      <div id="past-checkins"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+  let selectedMood = '';
+  document.getElementById('date-label').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+
+  function pickMood(el) {
+    document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('sel'));
+    el.classList.add('sel');
+    selectedMood = el.textContent;
+  }
+
+  function saveCheckin() {
+    if (!selectedMood) { showToast('Please pick a mood first'); return; }
+    const intention = document.getElementById('intention').value.trim();
+    if (!intention) { showToast('Add your intention for today'); return; }
+    const note = document.getElementById('note').value.trim();
+
+    const students = loadStudents();
+    const s = getCurrentStudent();
+    const idx = students.findIndex(x => x.id === s.id);
+    students[idx].dailyCheckins.push({ date: today(), mood: selectedMood, intention, note });
+    saveStudents(students);
+    showToast('Check-in saved!');
+    renderPast();
+    document.getElementById('intention').value = '';
+    document.getElementById('note').value = '';
+    document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('sel'));
+    selectedMood = '';
+  }
+
+  function renderPast() {
+    const students = loadStudents();
+    const s = students.find(x => x.id === getCurrentStudent().id);
+    const list = [...s.dailyCheckins].reverse();
+    document.getElementById('past-checkins').innerHTML = list.length
+      ? list.map(c => `
+        <div class="checkin-row">
+          <div class="checkin-date">${fmtDate(c.date)}</div>
+          <span class="badge badge-blue" style="min-width:80px;text-align:center;">${c.mood}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;">${c.intention}</div>
+            ${c.note ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.note}</div>` : ''}
+          </div>
+        </div>`).join('')
+      : '<p style="font-size:13px;color:var(--hint);">No check-ins yet.</p>';
+  }
+
+  renderPast();
+</script>
+</body>
+</html>

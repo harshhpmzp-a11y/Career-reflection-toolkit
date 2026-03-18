@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Career Reflection Toolkit</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px;
+    }
+    .wrap { width: 100%; max-width: 460px; }
+    .logo-area { text-align: center; margin-bottom: 28px; }
+    .logo-badge { display: inline-block; background: #2d5be3; color: #fff; font-size: 12px; font-weight: 600; padding: 5px 16px; border-radius: 20px; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .logo-area h1 { font-size: 26px; font-weight: 600; color: #1a1a18; }
+    .logo-area p { font-size: 14px; color: #6b6a64; margin-top: 5px; }
+    .role-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .role-tab { padding: 14px 10px; border: 1.5px solid #e2e0d8; border-radius: 10px; text-align: center; cursor: pointer; background: #fff; transition: all 0.15s; }
+    .role-tab:hover { border-color: #6b8ef0; background: #edf1fd; }
+    .role-tab.active { border-color: #2d5be3; background: #edf1fd; }
+    .rt-icon { font-size: 26px; margin-bottom: 6px; }
+    .rt-title { font-size: 14px; font-weight: 600; color: #1a1a18; }
+    .rt-sub { font-size: 11px; color: #6b6a64; margin-top: 2px; }
+    .role-tab.active .rt-title { color: #2d5be3; }
+    .form-card { background: #fff; border: 1px solid #e2e0d8; border-radius: 14px; padding: 24px; }
+    .card-title { font-size: 15px; font-weight: 600; color: #1a1a18; margin-bottom: 16px; }
+    .err-box { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c6; font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; display: none; }
+    .err-box.show { display: block; }
+    .fg { margin-bottom: 14px; }
+    label { font-size: 13px; font-weight: 500; color: #6b6a64; display: block; margin-bottom: 5px; }
+    input[type=text], input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid #e2e0d8; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: #1a1a18; background: #fff; transition: border 0.12s; }
+    input:focus { outline: none; border-color: #2d5be3; }
+    input[readonly] { background: #f0efe9; color: #9e9d96; cursor: default; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 42px; }
+    .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: #9e9d96; line-height: 1; padding: 2px; }
+    .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; max-height: 230px; overflow-y: auto; padding-right: 2px; }
+    .sgrid::-webkit-scrollbar { width: 4px; }
+    .sgrid::-webkit-scrollbar-thumb { background: #d3d1c7; border-radius: 2px; }
+    .sc { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border: 1.5px solid #e2e0d8; border-radius: 8px; cursor: pointer; transition: all 0.1s; background: #fff; }
+    .sc:hover { border-color: #6b8ef0; background: #edf1fd; }
+    .sc.sel { border-color: #2d5be3; background: #edf1fd; }
+    .av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .c0{background:#dbeafe;color:#1e40af} .c1{background:#dcfce7;color:#15803d} .c2{background:#fef3c7;color:#92400e}
+    .c3{background:#ffe4e6;color:#9f1239} .c4{background:#ede9fe;color:#6d28d9} .c5{background:#ccfbf1;color:#0f766e}
+    .c6{background:#ffedd5;color:#c2410c} .c7{background:#fce7f3;color:#9d174d} .c8{background:#e0e7ff;color:#3730a3}
+    .c9{background:#f1f5f9;color:#475569}
+    .sn { font-size: 12px; font-weight: 500; color: #1a1a18; }
+    .sm { font-size: 11px; color: #6b6a64; }
+    .login-btn { width: 100%; padding: 12px; background: #2d5be3; color: #fff; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.12s; margin-top: 4px; }
+    .login-btn:hover { background: #2449c7; }
+    .hint { margin-top: 14px; background: #f0efe9; border-radius: 8px; padding: 11px 14px; font-size: 13px; color: #6b6a64; line-height: 1.7; }
+    .hint b { color: #1a1a18; }
+    .hint .pw-show { color: #2d5be3; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-area">
+    <div class="logo-badge">NIU · Career Toolkit</div>
+    <h1>Welcome back</h1>
+    <p>Sign in to access your career reflection dashboard</p>
+  </div>
+
+  <div class="role-tabs">
+    <div class="role-tab active" id="tab-admin" onclick="switchRole('admin')">
+      <div class="rt-icon">🎓</div>
+      <div class="rt-title">Admin</div>
+      <div class="rt-sub">Instructor / College</div>
+    </div>
+    <div class="role-tab" id="tab-student" onclick="switchRole('student')">
+      <div class="rt-icon">👤</div>
+      <div class="rt-title">Student</div>
+      <div class="rt-sub">Access your profile</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <div class="err-box" id="err"></div>
+
+    <!-- ADMIN -->
+    <div id="admin-form">
+      <div class="card-title">Admin login</div>
+      <div class="fg">
+        <label>Username</label>
+        <input type="text" value="admin" readonly>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="apw" placeholder="Enter admin password">
+          <button class="eye-btn" onclick="toggleEye('apw',this)">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" onclick="adminLogin()">Sign in as Admin →</button>
+      <div class="hint">
+        <b>Admin password:</b> <span class="pw-show">niu2026</span><br>
+        View all 10 student profiles, goals, check-ins and career plans.
+      </div>
+    </div>
+
+    <!-- STUDENT -->
+    <div id="student-form" style="display:none;">
+      <div class="card-title">Student login</div>
+      <div class="fg">
+        <label>Select your name</label>
+        <div class="sgrid" id="sgrid"></div>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="spw" placeholder="Select your name first…">
+          <button class="eye-btn" onclick="toggleEye('spw',this)">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" onclick="studentLogin()">Sign in →</button>
+      <div class="hint" id="pw-hint">
+        <b>Password format:</b> firstname@niu<br>
+        Example — Aarav Sharma: <span class="pw-show">aarav@niu</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var STUDENTS = [
+  {id:"s01",name:"Aarav Sharma",  course:"Computer Science",       year:2,avatar:"AS"},
+  {id:"s02",name:"Priya Nair",    course:"Business Administration",year:3,avatar:"PN"},
+  {id:"s03",name:"Rohan Mehta",   course:"Mechanical Engineering", year:1,avatar:"RM"},
+  {id:"s04",name:"Sneha Kulkarni",course:"Psychology",             year:4,avatar:"SK"},
+  {id:"s05",name:"Arjun Verma",   course:"Data Science",           year:2,avatar:"AV"},
+  {id:"s06",name:"Meera Iyer",    course:"Architecture",           year:3,avatar:"MI"},
+  {id:"s07",name:"Karan Bose",    course:"Finance",                year:2,avatar:"KB"},
+  {id:"s08",name:"Divya Pillai",  course:"Biotechnology",          year:3,avatar:"DP"},
+  {id:"s09",name:"Vikram Desai",  course:"Law",                    year:1,avatar:"VD"},
+  {id:"s10",name:"Ananya Singh",  course:"Design & Communication", year:4,avatar:"AN"}
+];
+
+var selId = null;
+
+// Seed localStorage with full student data on first load
+(function seedStorage() {
+  if (!localStorage.getItem('ct_students')) {
+    localStorage.setItem('ct_students', JSON.stringify(STUDENTS));
+  }
+})();
+
+// Build student grid
+var grid = document.getElementById('sgrid');
+STUDENTS.forEach(function(s, i) {
+  var d = document.createElement('div');
+  d.className = 'sc';
+  d.innerHTML = '<div class="av c'+i+'">'+s.avatar+'</div><div><div class="sn">'+s.name+'</div><div class="sm">'+s.course.split(' ')[0]+' · Y'+s.year+'</div></div>';
+  d.onclick = function() {
+    document.querySelectorAll('.sc').forEach(function(c){c.classList.remove('sel');});
+    d.classList.add('sel');
+    selId = s.id;
+    var fn = s.name.split(' ')[0].toLowerCase();
+    document.getElementById('spw').placeholder = fn+'@niu';
+    document.getElementById('spw').focus();
+    document.getElementById('pw-hint').innerHTML =
+      '<b>'+s.name+'</b> — your password is: <span class="pw-show">'+fn+'@niu</span>';
+  };
+  grid.appendChild(d);
+});
+
+function switchRole(r) {
+  document.getElementById('admin-form').style.display   = r==='admin'   ? 'block':'none';
+  document.getElementById('student-form').style.display = r==='student' ? 'block':'none';
+  document.getElementById('tab-admin').classList.toggle('active',   r==='admin');
+  document.getElementById('tab-student').classList.toggle('active', r==='student');
+  document.getElementById('err').classList.remove('show');
+}
+
+function adminLogin() {
+  var pw = document.getElementById('apw').value.trim();
+  if (!pw) { showErr('Please enter the admin password.'); return; }
+  if (pw === 'niu2026') {
+    sessionStorage.setItem('ct_role','admin');
+    sessionStorage.removeItem('ct_current');
+    window.location.href = 'admin.html';
+  } else {
+    showErr('Incorrect password. Admin password is: niu2026');
+    document.getElementById('apw').value='';
+    document.getElementById('apw').focus();
+  }
+}
+
+function studentLogin() {
+  if (!selId) { showErr('Please click on your name from the list above first.'); return; }
+  var pw = document.getElementById('spw').value.trim();
+  if (!pw) { showErr('Please enter your password.'); return; }
+  var s = STUDENTS.find(function(x){return x.id===selId;});
+  var expected = s.name.split(' ')[0].toLowerCase()+'@niu';
+  if (pw === expected) {
+    sessionStorage.setItem('ct_role','student');
+    sessionStorage.setItem('ct_current', selId);
+    window.location.href = 'dashboard.html';
+  } else {
+    showErr('Wrong password. Your password is: '+expected);
+    document.getElementById('spw').value='';
+    document.getElementById('spw').focus();
+  }
+}
+
+function toggleEye(id, btn) {
+  var inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+function showErr(msg) {
+  var el = document.getElementById('err');
+  el.textContent = msg; el.classList.add('show');
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('admin-form').style.display !== 'none') adminLogin();
+  else studentLogin();
+});
+</script>
+</body>
+</html>

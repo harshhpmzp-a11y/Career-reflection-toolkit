@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — All Students — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding: 32px; background: var(--bg); }
+    .admin-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:28px; }
+    .student-detail { display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border); }
+    .student-detail.open { display:block; }
+    .course-tag { font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div style="max-width:900px;margin:0 auto;">
+    <div class="admin-header">
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--hint);margin-bottom:4px;">Instructor view</div>
+        <h1>All students</h1>
+      </div>
+      <button onclick="logout()" class="btn btn-secondary btn-sm">Sign out →</button>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="stat-grid" id="admin-stats" style="margin-bottom:24px;"></div>
+
+    <!-- Course filter -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="course-filters"></div>
+
+    <!-- Student cards -->
+    <div class="card">
+      <div id="student-list"></div>
+    </div>
+  </div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  const students = loadStudents();
+  requireAdmin();
+  let activeFilter = 'All';
+
+  // Admin stats
+  const totalCheckins = students.reduce((a,s)=>a+s.dailyCheckins.length,0);
+  const totalGoalsDone = students.reduce((a,s)=>a+s.goals.filter(g=>g.status==='done').length,0);
+  const totalGoals = students.reduce((a,s)=>a+s.goals.length,0);
+  const avgRating = (() => {
+    const all = students.flatMap(s=>s.weeklyReviews.map(r=>r.rating));
+    return all.length ? (all.reduce((a,b)=>a+b,0)/all.length).toFixed(1) : '—';
+  })();
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total students</div><div class="stat-value">${students.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Check-ins logged</div><div class="stat-value">${totalCheckins}</div></div>
+    <div class="stat-card"><div class="stat-label">Goals completed</div><div class="stat-value">${totalGoalsDone}/${totalGoals}</div><div class="stat-sub">${Math.round(totalGoalsDone/Math.max(totalGoals,1)*100)}%</div></div>`;
+
+  // Course filters
+  const courses = ['All', ...new Set(students.map(s=>s.course))];
+  document.getElementById('course-filters').innerHTML = courses.map(c => `
+    <button class="mood-pill ${c==='All'?'sel':''}" onclick="filterCourse('${c}', this)">${c}</button>`).join('');
+
+  function filterCourse(course, el) {
+    activeFilter = course;
+    document.querySelectorAll('#course-filters .mood-pill').forEach(p=>p.classList.remove('sel'));
+    el.classList.add('sel');
+    renderStudents();
+  }
+
+  function renderStudents() {
+    const filtered = activeFilter === 'All' ? students : students.filter(s=>s.course===activeFilter);
+    document.getElementById('student-list').innerHTML = filtered.map((s, i) => {
+      const done = s.goals.filter(g=>g.status==='done').length;
+      const lastMood = s.dailyCheckins.length ? s.dailyCheckins[s.dailyCheckins.length-1].mood : '—';
+      const lastRating = s.weeklyReviews.length ? s.weeklyReviews[s.weeklyReviews.length-1].rating : '—';
+      const idx = students.indexOf(s);
+      return `
+        <div class="student-row" onclick="toggleDetail('d${i}')">
+          <div class="avatar ${avColor(idx)}">${s.avatar}</div>
+          <div class="student-info">
+            <div class="student-name">${s.name}</div>
+            <div class="student-meta"><span class="course-tag">${s.course}</span> · Year ${s.year}</div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:center;">
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Check-ins</div><div style="font-size:14px;font-weight:500;">${s.dailyCheckins.length}</div></div>
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Goals done</div><div style="font-size:14px;font-weight:500;">${done}/${s.goals.length}</div></div>
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Last mood</div><span class="badge badge-blue" style="font-size:11px;">${lastMood}</span></div>
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Week rating</div><div style="font-size:14px;font-weight:500;">${lastRating}${lastRating!=='—'?'/5':''}</div></div>
+          </div>
+        </div>
+        <div class="student-detail" id="d${i}">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div>
+              <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Recent check-ins</div>
+              ${s.dailyCheckins.slice(-3).reverse().map(c=>`
+                <div style="margin-bottom:6px;"><span style="font-size:11px;color:var(--hint);font-family:var(--mono);">${c.date}</span> <span class="badge badge-blue" style="font-size:11px;">${c.mood}</span>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.intention}</div></div>`).join('') || '<p style="font-size:12px;color:var(--hint);">None</p>'}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Goals</div>
+              ${s.goals.map(g=>`<div style="font-size:12px;margin-bottom:5px;display:flex;gap:6px;align-items:center;"><span>${g.status==='done'?'✓':'○'}</span><span style="${g.status==='done'?'text-decoration:line-through;color:var(--hint);':''}">${g.title}</span></div>`).join('')}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Career plan</div>
+              <div style="font-size:13px;font-weight:500;">${s.careerPlan.targetRole}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">${s.careerPlan.timeline}</div>
+              <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${s.careerPlan.skills.map(sk=>`<span class="badge badge-gray" style="font-size:11px;">${sk}</span>`).join('')}</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-secondary btn-sm" onclick="loginAs('${s.id}', event)">View as this student →</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleDetail(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  function loginAs(id, e) {
+    e.stopPropagation();
+    sessionStorage.setItem('ct_role', 'student');
+    setCurrentStudent(id);
+    location.href = 'dashboard.html';
+  }
+
+  renderStudents();
+</script>
+</body>
+</html>

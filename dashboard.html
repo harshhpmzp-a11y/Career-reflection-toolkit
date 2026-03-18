@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item active" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Home</div>
+      <h1 class="page-title" id="greeting">Good morning</h1>
+      <p class="page-sub" id="date-sub"></p>
+    </div>
+
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <!-- Recent check-ins -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3>Recent check-ins</h3>
+          <a href="checkin.html" style="font-size:13px;">+ New</a>
+        </div>
+        <div id="recent-checkins"></div>
+      </div>
+
+      <!-- Goals snapshot -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3>Goals snapshot</h3>
+          <a href="goals.html" style="font-size:13px;">View all</a>
+        </div>
+        <div id="goals-snapshot"></div>
+      </div>
+    </div>
+
+    <!-- Career plan summary -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3>Career plan</h3>
+        <a href="career.html" style="font-size:13px;">Edit</a>
+      </div>
+      <div id="career-summary"></div>
+    </div>
+
+    <!-- Quick actions -->
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+      <a href="checkin.html" class="btn btn-primary">Start today's check-in →</a>
+      <a href="weekly.html" class="btn btn-secondary">Weekly review</a>
+      <a href="progress.html" class="btn btn-secondary">View progress</a>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+  const s = getCurrentStudent();
+  const students = loadStudents();
+
+  // Greeting
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greet}, ${s.name.split(' ')[0]}`;
+  document.getElementById('date-sub').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Stats
+  const done = s.goals.filter(g => g.status === 'done').length;
+  const total = s.goals.length;
+  const checkinCount = s.dailyCheckins.length;
+  const lastRating = s.weeklyReviews.length ? s.weeklyReviews[s.weeklyReviews.length-1].rating : '—';
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Check-ins logged</div><div class="stat-value">${checkinCount}</div><div class="stat-sub">this month</div></div>
+    <div class="stat-card"><div class="stat-label">Goals completed</div><div class="stat-value">${done}/${total}</div><div class="stat-sub">${Math.round(done/Math.max(total,1)*100)}% done</div></div>
+    <div class="stat-card"><div class="stat-label">Last week rating</div><div class="stat-value">${lastRating}${lastRating!=='—'?'/5':''}</div><div class="stat-sub">self-rated</div></div>`;
+
+  // Recent check-ins
+  const recent = [...s.dailyCheckins].reverse().slice(0,3);
+  document.getElementById('recent-checkins').innerHTML = recent.length
+    ? recent.map(c => `<div class="checkin-row">
+        <div class="checkin-date">${fmtDate(c.date)}</div>
+        <span class="badge badge-blue">${c.mood}</span>
+        <div style="font-size:13px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.intention}</div>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:var(--hint);">No check-ins yet. Start your first one!</p>';
+
+  // Goals snapshot
+  document.getElementById('goals-snapshot').innerHTML = s.goals.slice(0,4).map(g => `
+    <div class="goal-item">
+      <div class="goal-check ${g.status==='done'?'done':'inprog'}">${g.status==='done'?'✓':''}</div>
+      <div><div class="goal-title">${g.title}</div><div class="goal-deadline">Due ${fmtDate(g.deadline)}</div></div>
+    </div>`).join('');
+
+  // Career summary
+  const cp = s.careerPlan;
+  document.getElementById('career-summary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      <div><div class="stat-label">Target role</div><div style="font-size:14px;font-weight:500;margin-top:4px;">${cp.targetRole}</div></div>
+      <div><div class="stat-label">Key skills</div><div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">${cp.skills.map(sk=>`<span class="badge badge-gray">${sk}</span>`).join('')}</div></div>
+      <div><div class="stat-label">Timeline</div><div style="font-size:13px;color:var(--muted);margin-top:4px;">${cp.timeline}</div></div>
+    </div>`;
+</script>
+</body>
+</html>

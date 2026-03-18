@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item active" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Track</div>
+      <h1 class="page-title">Progress tracker</h1>
+      <p class="page-sub">Your reflection journey at a glance</p>
+    </div>
+
+    <div class="stat-grid" id="progress-stats" style="margin-bottom:20px;"></div>
+
+    <!-- Mood distribution -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:16px;">Mood distribution</h3>
+      <div id="mood-chart"></div>
+    </div>
+
+    <!-- Goals progress -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:16px;">Goals progress</h3>
+      <div id="goals-bars"></div>
+    </div>
+
+    <!-- Weekly ratings -->
+    <div class="card">
+      <h3 style="margin-bottom:16px;">Weekly ratings</h3>
+      <div id="weekly-ratings"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+
+  const students = loadStudents();
+  const s = students.find(x => x.id === getCurrentStudent().id);
+
+  // Stats
+  const done = s.goals.filter(g => g.status==='done').length;
+  const checkins = s.dailyCheckins.length;
+  const reviews = s.weeklyReviews.length;
+  const avgRating = reviews ? (s.weeklyReviews.reduce((a,r)=>a+r.rating,0)/reviews).toFixed(1) : '—';
+  document.getElementById('progress-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Check-ins total</div><div class="stat-value">${checkins}</div></div>
+    <div class="stat-card"><div class="stat-label">Weekly reviews</div><div class="stat-value">${reviews}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg week rating</div><div class="stat-value">${avgRating}${avgRating!=='—'?'/5':''}</div></div>`;
+
+  // Mood distribution
+  const moodCounts = {};
+  s.dailyCheckins.forEach(c => { moodCounts[c.mood] = (moodCounts[c.mood]||0)+1; });
+  const moodColors = { Energised:'var(--success)', Motivated:'var(--accent)', Focused:'#6366f1', Distracted:'var(--warn)', Anxious:'#f472b6', Drained:'var(--danger)' };
+  const maxMood = Math.max(...Object.values(moodCounts), 1);
+  document.getElementById('mood-chart').innerHTML = Object.entries(moodCounts).length
+    ? Object.entries(moodCounts).map(([mood,count]) => `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="width:90px;font-size:13px;color:var(--muted);text-align:right;">${mood}</div>
+          <div style="flex:1;">
+            <div class="progress-bar"><div class="progress-fill" style="width:${count/maxMood*100}%;background:${moodColors[mood]||'var(--accent)'}"></div></div>
+          </div>
+          <div style="width:24px;font-size:13px;font-weight:500;">${count}</div>
+        </div>`).join('')
+    : '<p style="font-size:13px;color:var(--hint);">No check-ins recorded yet.</p>';
+
+  // Goals progress bars
+  const goalDone = s.goals.filter(g=>g.status==='done').length;
+  const goalTotal = s.goals.length;
+  const goalPct = goalTotal ? Math.round(goalDone/goalTotal*100) : 0;
+  document.getElementById('goals-bars').innerHTML = `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span>Goals completed</span><span style="font-weight:500;">${goalDone} / ${goalTotal}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill green" style="width:${goalPct}%"></div></div>
+    </div>
+    ${s.goals.map(g => {
+      const due = daysUntil(g.deadline);
+      const pct = g.status==='done' ? 100 : Math.max(0, Math.min(100, 100 - due/90*100));
+      return `<div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span style="color:var(--muted);">${g.title}</span>
+          <span class="badge ${g.status==='done'?'badge-green':'badge-blue'}">${g.status==='done'?'Done':'In progress'}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${g.status==='done'?'green':''}" style="width:${g.status==='done'?100:Math.max(10,pct)}%"></div></div>
+      </div>`;
+    }).join('')}`;
+
+  // Weekly ratings timeline
+  document.getElementById('weekly-ratings').innerHTML = s.weeklyReviews.length
+    ? `<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">${
+        s.weeklyReviews.map(r => `
+          <div style="text-align:center;">
+            <div style="font-size:12px;font-weight:500;color:var(--accent);margin-bottom:4px;">${r.rating}/5</div>
+            <div style="width:36px;background:var(--accent-bg);border-radius:4px;overflow:hidden;">
+              <div style="height:${r.rating*12}px;background:var(--accent);border-radius:4px;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px;width:36px;word-break:break-all;">${r.date.slice(5)}</div>
+          </div>`).join('')
+      }</div>`
+    : '<p style="font-size:13px;color:var(--hint);">No weekly reviews yet.</p>';
+</script>
+</body>
+</html>

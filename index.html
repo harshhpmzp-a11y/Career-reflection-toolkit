@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Reflection Toolkit — Select Student</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 16px; }
+    .login-wrap { width: 100%; max-width: 560px; }
+    .login-header { text-align: center; margin-bottom: 32px; }
+    .login-header .logo { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--hint); margin-bottom: 8px; }
+    .login-header h1 { font-size: 26px; font-weight: 600; }
+    .login-header p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+    .student-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .student-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all 0.12s; display: flex; align-items: center; gap: 12px; }
+    .student-card:hover { border-color: var(--accent-muted); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .student-card.selected { border-color: var(--accent); background: var(--accent-bg); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .sc-info .sc-name { font-size: 14px; font-weight: 500; }
+    .sc-info .sc-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .enter-btn { margin-top: 20px; width: 100%; padding: 13px; font-size: 15px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: background 0.12s; display: none; }
+    .enter-btn:hover { background: #2449c7; }
+    .enter-btn.visible { display: block; }
+    .admin-link { text-align: center; margin-top: 16px; font-size: 13px; color: var(--muted); }
+    .admin-link a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-header">
+      <div class="logo">Career Toolkit</div>
+      <h1>Welcome back</h1>
+      <p>Select your profile to continue your reflection journey</p>
+    </div>
+
+    <div class="student-grid" id="student-grid"></div>
+
+    <button class="enter-btn" id="enter-btn" onclick="enterApp()">Continue to dashboard →</button>
+
+    <div class="admin-link">
+      Instructor? <a href="admin.html">View all students →</a>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let selected = null;
+    const students = loadStudents();
+
+    const grid = document.getElementById('student-grid');
+    students.forEach((s, i) => {
+      const div = document.createElement('div');
+      div.className = 'student-card';
+      div.innerHTML = `
+        <div class="avatar ${avColor(i)}">${s.avatar}</div>
+        <div class="sc-info">
+          <div class="sc-name">${s.name}</div>
+          <div class="sc-meta">${s.course}</div>
+          <div class="sc-meta">Year ${s.year}</div>
+        </div>`;
+      div.onclick = () => selectStudent(s.id, div);
+      grid.appendChild(div);
+    });
+
+    function selectStudent(id, el) {
+      document.querySelectorAll('.student-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selected = id;
+      document.getElementById('enter-btn').classList.add('visible');
+    }
+
+    function enterApp() {
+      if (!selected) return;
+      setCurrentStudent(selected);
+      location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>

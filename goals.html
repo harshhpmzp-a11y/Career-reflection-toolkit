@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goals — Career Toolkit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Career <span>Toolkit</span></div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">⌂</span> Dashboard</a>
+    <div class="nav-section">Reflect</div>
+    <a class="nav-item" href="checkin.html"><span class="nav-icon">☀</span> Daily check-in</a>
+    <a class="nav-item" href="weekly.html"><span class="nav-icon">📋</span> Weekly review</a>
+    <div class="nav-section">Plan</div>
+    <a class="nav-item active" href="goals.html"><span class="nav-icon">◎</span> Goals</a>
+    <a class="nav-item" href="career.html"><span class="nav-icon">→</span> Career planner</a>
+    <a class="nav-item" href="progress.html"><span class="nav-icon">↑</span> Progress</a>
+    <div class="student-badge" id="sidebar-student"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="label">Plan</div>
+      <h1 class="page-title">Goals</h1>
+      <p class="page-sub">Track what you're working towards</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid" id="goal-stats" style="margin-bottom:20px;"></div>
+
+    <!-- Add goal -->
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-bottom:14px;">Add a new goal</h3>
+      <div style="display:grid;grid-template-columns:1fr 180px;gap:12px;align-items:end;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="goal-title">Goal</label>
+          <input type="text" id="goal-title" placeholder="e.g. Land a summer internship">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="goal-deadline">Deadline</label>
+          <input type="date" id="goal-deadline">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="addGoal()">+ Add goal</button>
+    </div>
+
+    <!-- Goal list -->
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" onclick="filterGoals('all', this)">All</div>
+        <div class="tab" onclick="filterGoals('in-progress', this)">In progress</div>
+        <div class="tab" onclick="filterGoals('done', this)">Completed</div>
+      </div>
+      <div id="goal-list"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  requireStudent();
+  let currentFilter = 'all';
+
+  function renderStats() {
+    const students = loadStudents();
+    const s = students.find(x => x.id === getCurrentStudent().id);
+    const done = s.goals.filter(g => g.status==='done').length;
+    const inprog = s.goals.filter(g => g.status==='in-progress').length;
+    const overdue = s.goals.filter(g => g.status!=='done' && daysUntil(g.deadline) < 0).length;
+    document.getElementById('goal-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total goals</div><div class="stat-value">${s.goals.length}</div></div>
+      <div class="stat-card"><div class="stat-label">In progress</div><div class="stat-value">${inprog}</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${done}</div><div class="stat-sub">${Math.round(done/Math.max(s.goals.length,1)*100)}%</div></div>`;
+  }
+
+  function renderGoals() {
+    const students = loadStudents();
+    const s = students.find(x => x.id === getCurrentStudent().id);
+    let goals = s.goals;
+    if (currentFilter !== 'all') goals = goals.filter(g => g.status === currentFilter);
+    if (!goals.length) { document.getElementById('goal-list').innerHTML = '<p style="font-size:13px;color:var(--hint);padding:12px 0;">No goals here yet.</p>'; return; }
+    document.getElementById('goal-list').innerHTML = goals.map(g => {
+      const due = daysUntil(g.deadline);
+      const dueTxt = g.status==='done' ? 'Completed' : due < 0 ? `${Math.abs(due)} days overdue` : due === 0 ? 'Due today' : `${due} days left`;
+      const dueColor = g.status==='done' ? 'var(--success)' : due < 0 ? 'var(--danger)' : due <= 7 ? 'var(--warn)' : 'var(--hint)';
+      return `<div class="goal-item">
+        <div class="goal-check ${g.status==='done'?'done':'inprog'}" style="cursor:pointer;" onclick="toggleGoal('${g.id}')">${g.status==='done'?'✓':''}</div>
+        <div style="flex:1;">
+          <div class="goal-title" style="${g.status==='done'?'text-decoration:line-through;color:var(--muted);':''}">${g.title}</div>
+          <div style="font-size:12px;color:${dueColor};margin-top:2px;">${dueTxt} · ${fmtDate(g.deadline)}</div>
+        </div>
+        <button onclick="removeGoal('${g.id}')" style="background:none;border:none;color:var(--hint);cursor:pointer;font-size:16px;padding:0 4px;">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function filterGoals(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderGoals();
+  }
+
+  function addGoal() {
+    const title = document.getElementById('goal-title').value.trim();
+    const deadline = document.getElementById('goal-deadline').value;
+    if (!title || !deadline) { showToast('Fill in goal and deadline'); return; }
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    students[idx].goals.push({ id: 'g'+Date.now(), title, deadline, status: 'in-progress' });
+    saveStudents(students);
+    document.getElementById('goal-title').value = '';
+    document.getElementById('goal-deadline').value = '';
+    showToast('Goal added!');
+    renderStats();
+    renderGoals();
+  }
+
+  function toggleGoal(gid) {
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    const g = students[idx].goals.find(g => g.id === gid);
+    if (g) g.status = g.status === 'done' ? 'in-progress' : 'done';
+    saveStudents(students);
+    renderStats();
+    renderGoals();
+  }
+
+  function removeGoal(gid) {
+    const students = loadStudents();
+    const idx = students.findIndex(x => x.id === getCurrentStudent().id);
+    students[idx].goals = students[idx].goals.filter(g => g.id !== gid);
+    saveStudents(students);
+    showToast('Goal removed');
+    renderStats();
+    renderGoals();
+  }
+
+  renderStats();
+  renderGoals();
+</script>
+</body>
+</html>
