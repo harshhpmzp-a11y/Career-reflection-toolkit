@@ -3,62 +3,229 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — All Students — Career Toolkit</title>
+  <title>Admin — Career Toolkit</title>
   <link rel="stylesheet" href="style.css">
   <style>
     body { padding: 32px; background: var(--bg); }
     .admin-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:28px; }
+    .course-tag { font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--muted); }
     .student-detail { display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border); }
     .student-detail.open { display:block; }
-    .course-tag { font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--muted); }
+    .tabs { display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:24px; }
+    .tab { padding:10px 18px;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.1s; }
+    .tab:hover { color:var(--text); }
+    .tab.active { color:var(--accent);border-bottom-color:var(--accent);font-weight:500; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .cred-table { width:100%;border-collapse:collapse;font-size:13px; }
+    .cred-table th { text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--hint);border-bottom:1px solid var(--border);font-weight:500; }
+    .cred-table td { padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle; }
+    .cred-table tr:last-child td { border-bottom:none; }
+    .cred-table tr:hover td { background:var(--surface2); }
+    .pw-cell { display:flex;align-items:center;gap:8px; }
+    .pw-dots { font-size:18px;letter-spacing:2px;color:var(--hint); }
+    .edit-pw-btn { font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.1s; }
+    .edit-pw-btn:hover { border-color:var(--accent);color:var(--accent); }
+    .del-btn { font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--danger);cursor:pointer;transition:all 0.1s; }
+    .del-btn:hover { background:var(--danger-bg);border-color:var(--danger); }
+    .pw-edit-row { display:none;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap; }
+    .pw-edit-row.open { display:flex; }
+    .pw-edit-row input { font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;width:150px;font-family:var(--font);color:var(--text); }
+    .pw-edit-row input:focus { outline:none;border-color:var(--accent); }
+    .save-pw-btn { font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font); }
+    .cancel-pw-btn { font-size:12px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:var(--font); }
+    .admin-cred-box { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+    .mono { font-family:var(--mono);font-size:13px; }
+    .add-form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+    .section-title { font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px; }
+    .divider-line { border:none;border-top:1px solid var(--border);margin:24px 0; }
+    .confirm-overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);z-index:100;align-items:center;justify-content:center; }
+    .confirm-overlay.show { display:flex; }
+    .confirm-box { background:var(--surface);border-radius:var(--radius);padding:28px;max-width:360px;width:90%;text-align:center; }
+    .confirm-box h3 { margin-bottom:10px; }
+    .confirm-box p { font-size:14px;color:var(--muted);margin-bottom:20px; }
+    .confirm-actions { display:flex;gap:10px;justify-content:center; }
   </style>
 </head>
 <body>
-  <div style="max-width:900px;margin:0 auto;">
-    <div class="admin-header">
-      <div>
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--hint);margin-bottom:4px;">Instructor view</div>
-        <h1>All students</h1>
-      </div>
-      <button onclick="logout()" class="btn btn-secondary btn-sm">Sign out →</button>
+<div style="max-width:960px;margin:0 auto;">
+
+  <div class="admin-header">
+    <div>
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--hint);margin-bottom:4px;">Instructor view</div>
+      <h1>Admin Dashboard</h1>
     </div>
+    <button onclick="logout()" class="btn btn-secondary btn-sm">Sign out →</button>
+  </div>
 
-    <!-- Summary stats -->
-    <div class="stat-grid" id="admin-stats" style="margin-bottom:24px;"></div>
+  <!-- Stats -->
+  <div class="stat-grid" id="admin-stats" style="margin-bottom:24px;"></div>
 
-    <!-- Course filter -->
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('students',this)">All Students</div>
+    <div class="tab" onclick="switchTab('add',this)">+ Add Student</div>
+    <div class="tab" onclick="switchTab('credentials',this)">Manage Credentials</div>
+  </div>
+
+  <!-- ── PANEL: All Students ── -->
+  <div class="panel active" id="panel-students">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="course-filters"></div>
-
-    <!-- Student cards -->
     <div class="card">
       <div id="student-list"></div>
     </div>
   </div>
 
+  <!-- ── PANEL: Add Student ── -->
+  <div class="panel" id="panel-add">
+    <div class="card">
+      <div class="section-title">Add a new student</div>
+      <div class="add-form-grid">
+        <div class="form-group">
+          <label>Full name *</label>
+          <input type="text" id="new-name" placeholder="e.g. Rahul Gupta">
+        </div>
+        <div class="form-group">
+          <label>Course *</label>
+          <input type="text" id="new-course" placeholder="e.g. Computer Science">
+        </div>
+        <div class="form-group">
+          <label>Year *</label>
+          <select id="new-year">
+            <option value="">Select year</option>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Username * <span style="font-size:11px;color:var(--hint);">(student uses this to login)</span></label>
+          <input type="text" id="new-username" placeholder="e.g. rahul">
+        </div>
+        <div class="form-group">
+          <label>Password * <span style="font-size:11px;color:var(--hint);">(share privately with student)</span></label>
+          <input type="password" id="new-password" placeholder="Min 4 characters">
+        </div>
+        <div class="form-group">
+          <label>Target career role</label>
+          <input type="text" id="new-role" placeholder="e.g. Software Engineer">
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="addStudent()">Add student</button>
+        <button class="btn btn-secondary" onclick="clearAddForm()">Clear</button>
+      </div>
+      <div id="add-success" style="display:none;margin-top:16px;background:var(--success-bg);color:var(--success);padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;"></div>
+    </div>
+
+    <hr class="divider-line">
+
+    <!-- Existing students with remove option -->
+    <div class="section-title">Remove a student</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="cred-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Year</th>
+            <th>Username</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="remove-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PANEL: Credentials ── -->
+  <div class="panel" id="panel-credentials">
+    <div style="margin-bottom:20px;">
+      <div class="section-title">Admin credentials</div>
+      <div class="admin-cred-box">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Username</div>
+          <div class="mono" id="admin-username-display"></div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Password</div>
+          <div class="pw-cell">
+            <span class="pw-dots">••••••</span>
+            <button class="edit-pw-btn" onclick="toggleAdminPwEdit()">Change</button>
+          </div>
+          <div class="pw-edit-row" id="admin-pw-edit">
+            <input type="password" id="admin-new-pw" placeholder="New password">
+            <button class="save-pw-btn" onclick="saveAdminPw()">Save</button>
+            <button class="cancel-pw-btn" onclick="toggleAdminPwEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Student credentials</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="cred-table">
+        <thead>
+          <tr><th>Name</th><th>Course</th><th>Username</th><th>Password</th></tr>
+        </thead>
+        <tbody id="cred-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Confirm delete modal -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Remove student?</h3>
+    <p id="confirm-msg">This will permanently delete the student and all their data.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn" style="background:var(--danger);color:#fff;border-color:var(--danger);" onclick="confirmDelete()">Yes, remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 <script src="data.js"></script>
 <script src="app.js"></script>
 <script>
-  const students = loadStudents();
   requireAdmin();
+
   let activeFilter = 'All';
+  let pendingDeleteId = null;
 
-  // Admin stats
-  const totalCheckins = students.reduce((a,s)=>a+s.dailyCheckins.length,0);
-  const totalGoalsDone = students.reduce((a,s)=>a+s.goals.filter(g=>g.status==='done').length,0);
-  const totalGoals = students.reduce((a,s)=>a+s.goals.length,0);
-  const avgRating = (() => {
-    const all = students.flatMap(s=>s.weeklyReviews.map(r=>r.rating));
-    return all.length ? (all.reduce((a,b)=>a+b,0)/all.length).toFixed(1) : '—';
-  })();
-  document.getElementById('admin-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total students</div><div class="stat-value">${students.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Check-ins logged</div><div class="stat-value">${totalCheckins}</div></div>
-    <div class="stat-card"><div class="stat-label">Goals completed</div><div class="stat-value">${totalGoalsDone}/${totalGoals}</div><div class="stat-sub">${Math.round(totalGoalsDone/Math.max(totalGoals,1)*100)}%</div></div>`;
+  // ── Stats ──
+  function renderStats() {
+    const students = loadStudents();
+    const totalCheckins = students.reduce((a,s)=>a+(s.dailyCheckins||[]).length,0);
+    const totalGoalsDone = students.reduce((a,s)=>a+(s.goals||[]).filter(g=>g.status==='done').length,0);
+    const totalGoals = students.reduce((a,s)=>a+(s.goals||[]).length,0);
+    document.getElementById('admin-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total students</div><div class="stat-value">${students.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Check-ins logged</div><div class="stat-value">${totalCheckins}</div></div>
+      <div class="stat-card"><div class="stat-label">Goals completed</div><div class="stat-value">${totalGoalsDone}/${totalGoals}</div><div class="stat-sub">${Math.round(totalGoalsDone/Math.max(totalGoals,1)*100)}%</div></div>`;
+  }
 
-  // Course filters
-  const courses = ['All', ...new Set(students.map(s=>s.course))];
-  document.getElementById('course-filters').innerHTML = courses.map(c => `
-    <button class="mood-pill ${c==='All'?'sel':''}" onclick="filterCourse('${c}', this)">${c}</button>`).join('');
+  // ── Tab switch ──
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-'+name).classList.add('active');
+    if (name === 'credentials') renderCredentials();
+    if (name === 'add') renderRemoveTable();
+  }
+
+  // ── Course filter ──
+  function buildFilters() {
+    const students = loadStudents();
+    const courses = ['All', ...new Set(students.map(s=>s.course))];
+    document.getElementById('course-filters').innerHTML = courses.map(c =>
+      `<button class="mood-pill ${c==='All'?'sel':''}" onclick="filterCourse('${c}',this)">${c}</button>`).join('');
+  }
 
   function filterCourse(course, el) {
     activeFilter = course;
@@ -67,13 +234,15 @@
     renderStudents();
   }
 
+  // ── Student list ──
   function renderStudents() {
-    const filtered = activeFilter === 'All' ? students : students.filter(s=>s.course===activeFilter);
-    document.getElementById('student-list').innerHTML = filtered.map((s, i) => {
-      const done = s.goals.filter(g=>g.status==='done').length;
-      const lastMood = s.dailyCheckins.length ? s.dailyCheckins[s.dailyCheckins.length-1].mood : '—';
-      const lastRating = s.weeklyReviews.length ? s.weeklyReviews[s.weeklyReviews.length-1].rating : '—';
-      const idx = students.indexOf(s);
+    const allStudents = loadStudents();
+    const filtered = activeFilter === 'All' ? allStudents : allStudents.filter(s=>s.course===activeFilter);
+    document.getElementById('student-list').innerHTML = filtered.length ? filtered.map((s,i) => {
+      const done = (s.goals||[]).filter(g=>g.status==='done').length;
+      const lastMood = (s.dailyCheckins||[]).length ? s.dailyCheckins[s.dailyCheckins.length-1].mood : '—';
+      const lastRating = (s.weeklyReviews||[]).length ? s.weeklyReviews[s.weeklyReviews.length-1].rating : '—';
+      const idx = allStudents.indexOf(s);
       return `
         <div class="student-row" onclick="toggleDetail('d${i}')">
           <div class="avatar ${avColor(idx)}">${s.avatar}</div>
@@ -82,8 +251,8 @@
             <div class="student-meta"><span class="course-tag">${s.course}</span> · Year ${s.year}</div>
           </div>
           <div style="display:flex;gap:16px;align-items:center;">
-            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Check-ins</div><div style="font-size:14px;font-weight:500;">${s.dailyCheckins.length}</div></div>
-            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Goals done</div><div style="font-size:14px;font-weight:500;">${done}/${s.goals.length}</div></div>
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Check-ins</div><div style="font-size:14px;font-weight:500;">${(s.dailyCheckins||[]).length}</div></div>
+            <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Goals done</div><div style="font-size:14px;font-weight:500;">${done}/${(s.goals||[]).length}</div></div>
             <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Last mood</div><span class="badge badge-blue" style="font-size:11px;">${lastMood}</span></div>
             <div style="text-align:center;"><div style="font-size:11px;color:var(--hint);">Week rating</div><div style="font-size:14px;font-weight:500;">${lastRating}${lastRating!=='—'?'/5':''}</div></div>
           </div>
@@ -92,40 +261,194 @@
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
             <div>
               <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Recent check-ins</div>
-              ${s.dailyCheckins.slice(-3).reverse().map(c=>`
-                <div style="margin-bottom:6px;"><span style="font-size:11px;color:var(--hint);font-family:var(--mono);">${c.date}</span> <span class="badge badge-blue" style="font-size:11px;">${c.mood}</span>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.intention}</div></div>`).join('') || '<p style="font-size:12px;color:var(--hint);">None</p>'}
+              ${(s.dailyCheckins||[]).slice(-3).reverse().map(c=>`
+                <div style="margin-bottom:6px;">
+                  <span style="font-size:11px;color:var(--hint);font-family:var(--mono);">${c.date}</span>
+                  <span class="badge badge-blue" style="font-size:11px;">${c.mood}</span>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.intention}</div>
+                </div>`).join('') || '<p style="font-size:12px;color:var(--hint);">None yet</p>'}
             </div>
             <div>
               <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Goals</div>
-              ${s.goals.map(g=>`<div style="font-size:12px;margin-bottom:5px;display:flex;gap:6px;align-items:center;"><span>${g.status==='done'?'✓':'○'}</span><span style="${g.status==='done'?'text-decoration:line-through;color:var(--hint);':''}">${g.title}</span></div>`).join('')}
+              ${(s.goals||[]).map(g=>`<div style="font-size:12px;margin-bottom:5px;display:flex;gap:6px;"><span>${g.status==='done'?'✓':'○'}</span><span style="${g.status==='done'?'text-decoration:line-through;color:var(--hint);':''}">${g.title}</span></div>`).join('') || '<p style="font-size:12px;color:var(--hint);">None yet</p>'}
             </div>
             <div>
               <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Career plan</div>
-              <div style="font-size:13px;font-weight:500;">${s.careerPlan.targetRole}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:4px;">${s.careerPlan.timeline}</div>
-              <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${s.careerPlan.skills.map(sk=>`<span class="badge badge-gray" style="font-size:11px;">${sk}</span>`).join('')}</div>
+              <div style="font-size:13px;font-weight:500;">${(s.careerPlan||{}).targetRole||'—'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">${(s.careerPlan||{}).timeline||''}</div>
             </div>
           </div>
           <div style="margin-top:12px;">
-            <button class="btn btn-secondary btn-sm" onclick="loginAs('${s.id}', event)">View as this student →</button>
+            <button class="btn btn-secondary btn-sm" onclick="loginAs('${s.id}',event)">View as this student →</button>
           </div>
         </div>`;
-    }).join('');
+    }).join('') : '<p style="padding:16px;font-size:13px;color:var(--hint);">No students found.</p>';
   }
 
-  function toggleDetail(id) {
-    const el = document.getElementById(id);
-    el.classList.toggle('open');
-  }
+  function toggleDetail(id) { document.getElementById(id).classList.toggle('open'); }
 
   function loginAs(id, e) {
     e.stopPropagation();
-    sessionStorage.setItem('ct_role', 'student');
+    sessionStorage.setItem('ct_role','student');
     setCurrentStudent(id);
     location.href = 'dashboard.html';
   }
 
+  // ── Add Student ──
+  function addStudent() {
+    const name     = document.getElementById('new-name').value.trim();
+    const course   = document.getElementById('new-course').value.trim();
+    const year     = document.getElementById('new-year').value;
+    const username = document.getElementById('new-username').value.trim().toLowerCase();
+    const password = document.getElementById('new-password').value.trim();
+    const role     = document.getElementById('new-role').value.trim();
+
+    if (!name || !course || !year || !username || !password) {
+      showToast('Please fill in all required fields'); return;
+    }
+    if (password.length < 4) { showToast('Password must be at least 4 characters'); return; }
+
+    const students = loadStudents();
+    if (students.find(s=>s.username===username)) { showToast('Username already exists — choose another'); return; }
+
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const newStudent = {
+      id: 's'+Date.now(),
+      name, course, year: parseInt(year),
+      avatar: initials,
+      username, password,
+      dailyCheckins: [],
+      weeklyReviews: [],
+      goals: [],
+      careerPlan: { targetRole: role||'—', skills: [], timeline: '' }
+    };
+
+    students.push(newStudent);
+    saveStudents(students);
+
+    const msg = document.getElementById('add-success');
+    msg.textContent = `✓ ${name} added successfully! Username: ${username}`;
+    msg.style.display = 'block';
+    setTimeout(()=>msg.style.display='none', 4000);
+
+    clearAddForm();
+    renderStats();
+    buildFilters();
+    renderStudents();
+    renderRemoveTable();
+    showToast(name + ' added!');
+  }
+
+  function clearAddForm() {
+    ['new-name','new-course','new-username','new-password','new-role'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('new-year').value='';
+  }
+
+  // ── Remove Student ──
+  function renderRemoveTable() {
+    const students = loadStudents();
+    document.getElementById('remove-table-body').innerHTML = students.map((s,i) => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;" class="${avColor(i)}">${s.avatar}</div>
+            <span style="font-weight:500;">${s.name}</span>
+          </div>
+        </td>
+        <td><span class="course-tag">${s.course}</span></td>
+        <td>Year ${s.year}</td>
+        <td><span class="mono">${s.username||'—'}</span></td>
+        <td><button class="del-btn" onclick="askDelete('${s.id}','${s.name}')">Remove</button></td>
+      </tr>`).join('');
+  }
+
+  function askDelete(id, name) {
+    pendingDeleteId = id;
+    document.getElementById('confirm-msg').textContent = `This will permanently remove "${name}" and all their data. This cannot be undone.`;
+    document.getElementById('confirm-overlay').classList.add('show');
+  }
+
+  function closeConfirm() {
+    pendingDeleteId = null;
+    document.getElementById('confirm-overlay').classList.remove('show');
+  }
+
+  function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const students = loadStudents();
+    const s = students.find(x=>x.id===pendingDeleteId);
+    const updated = students.filter(x=>x.id!==pendingDeleteId);
+    saveStudents(updated);
+    closeConfirm();
+    showToast((s?s.name:'Student') + ' removed');
+    renderStats();
+    buildFilters();
+    renderStudents();
+    renderRemoveTable();
+    if (document.getElementById('panel-credentials').classList.contains('active')) renderCredentials();
+  }
+
+  // ── Credentials ──
+  function renderCredentials() {
+    const admin = JSON.parse(localStorage.getItem('ct_admin') || '{"username":"admin"}');
+    document.getElementById('admin-username-display').textContent = admin.username;
+    const students = loadStudents();
+    document.getElementById('cred-table-body').innerHTML = students.map((s,i) => `
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;" class="${avColor(i)}">${s.avatar}</div><span style="font-weight:500;">${s.name}</span></div></td>
+        <td><span class="course-tag">${s.course}</span></td>
+        <td><span class="mono">${s.username||'—'}</span></td>
+        <td>
+          <div class="pw-cell">
+            <span class="pw-dots">••••••</span>
+            <button class="edit-pw-btn" onclick="toggleStudentPwEdit('${s.id}')">Change</button>
+          </div>
+          <div class="pw-edit-row" id="edit-${s.id}">
+            <input type="text" id="newpw-${s.id}" placeholder="New password">
+            <button class="save-pw-btn" onclick="saveStudentPw('${s.id}')">Save</button>
+            <button class="cancel-pw-btn" onclick="toggleStudentPwEdit('${s.id}')">Cancel</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function toggleStudentPwEdit(id) {
+    const row = document.getElementById('edit-'+id);
+    row.classList.toggle('open');
+    if (row.classList.contains('open')) document.getElementById('newpw-'+id).focus();
+  }
+
+  function saveStudentPw(id) {
+    const newPw = document.getElementById('newpw-'+id).value.trim();
+    if (!newPw || newPw.length < 4) { showToast('Password must be at least 4 characters'); return; }
+    const students = loadStudents();
+    const idx = students.findIndex(s=>s.id===id);
+    students[idx].password = newPw;
+    saveStudents(students);
+    toggleStudentPwEdit(id);
+    showToast('Password updated for '+students[idx].name);
+  }
+
+  function toggleAdminPwEdit() {
+    const row = document.getElementById('admin-pw-edit');
+    row.classList.toggle('open');
+    if (row.classList.contains('open')) document.getElementById('admin-new-pw').focus();
+  }
+
+  function saveAdminPw() {
+    const newPw = document.getElementById('admin-new-pw').value.trim();
+    if (!newPw || newPw.length < 4) { showToast('Password must be at least 4 characters'); return; }
+    const admin = JSON.parse(localStorage.getItem('ct_admin') || '{}');
+    admin.password = newPw;
+    localStorage.setItem('ct_admin', JSON.stringify(admin));
+    toggleAdminPwEdit();
+    document.getElementById('admin-new-pw').value = '';
+    showToast('Admin password updated!');
+  }
+
+  // Init
+  renderStats();
+  buildFilters();
   renderStudents();
 </script>
 </body>
